@@ -7,7 +7,7 @@ find_package(OpenCV REQUIRED)
 set(LIBS ${OpenCV_LIBS})
 
 # onnxruntime
-set(LIBS ${LIBS} /home/seyyit/projects/cpp-autonomous-vehicle/lib/libonnxruntime.so)
+set(LIBS ${LIBS} ${CMAKE_SOURCE_DIR}/lib/libonnxruntime.so)
 
 file(GLOB_RECURSE SOURCE
     src/*.cpp
