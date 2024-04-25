@@ -33,6 +33,7 @@ std::vector<cv::Mat> findContour(const cv::Mat &img){
     return contours;
 }
 
+
 // NOTE: this could be wrong
 std::vector<cv::Point> findBiggestContour(const std::vector<cv::Mat> &contours){
     double maxArea = 0;
@@ -67,7 +68,14 @@ cv::Mat preprocessingImageToClassifier(const cv::Mat &img, int imgSize = 32){
     return gray_img;   
 }
 
+
 int main(){
+    // model
+    ModelHandler model(FileSystem::getPath("src/model/sign.onnx"));
+    
+    // testONNXMOdel(FileSystem::getPath("src/model/sign.onnx"));
+    // testModelHandler(FileSystem::getPath("src/model/sign.onnx"));
+    
     cv::VideoCapture source(0);
     cv::Mat frame;
 
@@ -87,7 +95,9 @@ int main(){
             if (cv::contourArea(big) > 3000)
             {
                 auto sign =  boundaryBox(frame, big);
-                cv::imshow("sign",sign);
+                auto result = model.prepareInputTensorAndPredict(sign);
+                resultToLabel(&result);
+                // cv::imshow("sign",sign);
             }
             
         }

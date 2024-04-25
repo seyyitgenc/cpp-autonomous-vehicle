@@ -1,130 +1,159 @@
 #pragma once
 
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
-
-/**
- * This sample application demonstrates how to use components of the experimental C++ API
- * to query for model inputs/outputs and how to run inferrence on a model.
- *
- * This example is best run with one of the ResNet models (i.e. ResNet18) from the onnx model zoo at
- *   https://github.com/onnx/models
- *
- * Assumptions made in this example:
- *  1) The onnx model has 1 input node and 1 output node
- *  2) The onnx model should have float input
- *
- *
- * In this example, we do the following:
- *  1) read in an onnx model
- *  2) print out some metadata information about inputs and outputs that the model expects
- *  3) generate random data for an input tensor
- *  4) pass tensor through the model and check the resulting tensor
- *
- */
-
-#include <algorithm>  // std::generate
-#include <cassert>
-#include <cstddef>
-#include <cstdint>
-#include <iostream>
-#include <sstream>
 #include <string>
-#include <vector>
 #include <onnxruntime/onnxruntime_cxx_api.h>
+#include <opencv2/opencv.hpp>
 
-// pretty prints a shape dimension vector
-std::string print_shape(const std::vector<std::int64_t>& v) {
-    std::stringstream ss("");
-    for (std::size_t i = 0; i < v.size() - 1; i++) ss << v[i] << "x";
-    ss << v[v.size() - 1];
-    return ss.str();
-}
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <array>
 
-int calculate_product(const std::vector<std::int64_t>& v) {
-    int total = 1;
-    for (auto& i : v) total *= i;
-    return total;
-}
 
-template <typename T>
-Ort::Value vec_to_tensor(std::vector<T>& data, const std::vector<std::int64_t>& shape) {
-    Ort::MemoryInfo mem_info = Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
-    auto tensor = Ort::Value::CreateTensor<T>(mem_info, data.data(), data.size(), shape.data(), shape.size());
-    return tensor;
-}
+// TODO: ADD HELPER FUNCTIONS TO PRINT OUT PROVIDED MODEL INFORMATION
+class ModelHandler
+{
+public:
+    //! This default parameters are specialized for personel usage. if you insist to use it please provide proper shape for your model
+    ModelHandler(const std::string &modelPath) :
+    _env(ORT_LOGGING_LEVEL_WARNING, "ModelHandler"), 
+    _session(_env, modelPath.c_str(), Ort::SessionOptions{})
+    {
+        auto memoryInfo = Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
+        _inputTensor = Ort::Value::CreateTensor<float>(memoryInfo, _input.data(), _input.size(), _inputShape.data(), _inputShape.size());
+        _outputTensor = Ort::Value::CreateTensor<float>(memoryInfo, _results.data(), _results.size(), _outputShape.data(), _outputShape.size());
+    };
+    ~ModelHandler() = default;
 
-void testONNXMOdel(const std::basic_string<char>& path){
-    // onnxruntime setup
-    Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "example-model-explorer");
-    Ort::SessionOptions session_options;
-    Ort::Session session = Ort::Session(env, path.c_str(), session_options);
+    std::ptrdiff_t prepareInputTensorAndPredict(cv::Mat &image, int sizeX = 32, int sizeY = 32){
+        cv::cvtColor(image, image, cv::COLOR_RGB2GRAY);
+        cv::resize(image, image, cv::Size(sizeX, sizeY));
+        image = image.reshape(1, 1); // reshape image input 1D
+        image.convertTo(_input, CV_32FC1, 1.0f / 255); // normalize input
 
-    // print name/shape of inputs
-    Ort::AllocatorWithDefaultOptions allocator;
-    std::vector<std::string> input_names;
-    std::vector<std::int64_t> input_shapes;
-    std::cout << "Input Node Name/Shape (" << input_names.size() << "):" << std::endl;
-    for (std::size_t i = 0; i < session.GetInputCount(); i++) {
-        input_names.emplace_back(session.GetInputNameAllocated(i, allocator).get());
-        input_shapes = session.GetInputTypeInfo(i).GetTensorTypeAndShapeInfo().GetShape();
-        std::cout << "\t" << input_names.at(i) << " : " << print_shape(input_shapes) << std::endl;
-    }
-    // some models might have negative shape values to indicate dynamic shape, e.g., for variable batch size.
-    for (auto& s : input_shapes) {
-        if (s < 0) {
-            s = 1;
+        try{
+            _session.Run(_runOptions, _inputName.data(), &_inputTensor, 1, _outputName.data(), &_outputTensor, 1);
         }
+        catch(const std::exception& e){
+            std::cerr << e.what() << '\n';
+        }
+
+        // std::vector<std::pair<size_t, float>> indexValuePairs;
+        // for (size_t i = 0; i < _results.size(); ++i) {
+        //     indexValuePairs.emplace_back(i, _results[i]);
+        // }
+        // std::sort(indexValuePairs.begin(), indexValuePairs.end(), [](const auto& lhs, const auto& rhs) { return lhs.second > rhs.second; });
+
+        // // show Top5
+        // for (size_t i = 0; i < 4; ++i) {
+        //     const auto& result = indexValuePairs[i];
+        //     // std::cout << i + 1 << ": " << labels[result.first] << " " << result.second << std::endl;
+        // }
+
+        // sort results
+        _result = std::distance(_results.begin(), std::max_element(_results.begin(), _results.end()));
+        return _result;
     }
 
-    // print name/shape of outputs
-    std::vector<std::string> output_names;
-    std::cout << "Output Node Name/Shape (" << output_names.size() << "):" << std::endl;
-    for (std::size_t i = 0; i < session.GetOutputCount(); i++) {
-        output_names.emplace_back(session.GetOutputNameAllocated(i, allocator).get());
-        auto output_shapes = session.GetOutputTypeInfo(i).GetTensorTypeAndShapeInfo().GetShape();
-        std::cout << "\t" << output_names.at(i) << " : " << print_shape(output_shapes) << std::endl;
+private:
+    Ort::Env _env;
+    Ort::RunOptions _runOptions;
+    Ort::Session _session{nullptr}; // will be filled later on
+    // NOTE: PLEASE PROVIDE YOUR OWN INPUT AND OUTPUT NAMES HERE.
+    // FIXME: MAKE IT WORK WITH EVERY MODEL. THIS IS FOR PERSONAL USAGE
+    std::vector<const char*> _inputName {"sign"};
+    std::vector<const char*> _outputName {"output"};
+    
+    // std::int64_t numChannels = 1;
+    static constexpr std::int64_t _width = 32;
+    static constexpr std::int64_t _height = 32;
+    static constexpr std::int64_t _numClasses = 4;
+
+    std::array<float, _width * _height> _input{};
+    std::array<float, _numClasses> _results{};
+    
+    std::int64_t _result{0};
+
+    Ort::Value _inputTensor{nullptr};
+    std::array<std::int64_t,4> _inputShape{1, _width, _height, 1};
+    
+    Ort::Value _outputTensor{nullptr};
+    std::array<std::int64_t,2> _outputShape{1, _numClasses};
+};
+
+inline std::vector<float> loadImage(const std::string& filename, int sizeX = 32, int sizeY = 32)
+{
+    cv::Mat image = cv::imread(filename);
+    if (image.empty()) {
+        std::cout << "No image found.";
     }
 
-    // Assume model has 1 input node and 1 output node.
-    assert(input_names.size() == 1 && output_names.size() == 1);
+    // convert from BGR to RGB
+    cv::cvtColor(image, image, cv::COLOR_RGB2GRAY);
+    //! if your model needs it use this instead
+    // cv::cvtColor(image, image, cv::COLOR_BGR2RGB); 
+    // resize
+    cv::resize(image, image, cv::Size(sizeX, sizeY));
+    // reshape to 1D
+    image = image.reshape(1, 1);
 
-    // Create a single Ort tensor of random numbers
-    auto input_shape = input_shapes;
-    auto total_number_elements = calculate_product(input_shape);
-    std::cout << "Total number elements : " << total_number_elements  << std::endl; 
+    std::vector<float> vec;
+    image.convertTo(vec, CV_32FC1, 1. / 255);
 
-    // generate random numbers in the range [0, 255]
-    std::vector<float> input_tensor_values(total_number_elements);
-    std::generate(input_tensor_values.begin(), input_tensor_values.end(), [&] { return rand() % 255; });
-    std::vector<Ort::Value> input_tensors;
-    input_tensors.emplace_back(vec_to_tensor<float>(input_tensor_values, input_shape));
+    // uint_8, [0, 255] -> float, [0, 1]
+    // Normalize number to between 0 and 1
+    // Convert to vector<float> from cv::Mat.
+    // NOTE: consider this if your models needs to group according to it's channel
+    // Transpose (Height, Width, Channel)(224,224,3) to (Chanel, Height, Width)(3,224,224)
+    // std::vector<float> output;
+    // for (size_t ch = 0; ch < 3; ++ch) {
+    //     for (size_t i = ch; i < vec.size(); i += 3) {
+    //         output.emplace_back(vec[i]);
+    //     }
+    // }
+    return vec;
+}
 
-    // double-check the dimensions of the input tensor
-    assert(input_tensors[0].IsTensor() && input_tensors[0].GetTensorTypeAndShapeInfo().GetShape() == input_shape);
-    std::cout << "\ninput_tensor shape: " << print_shape(input_tensors[0].GetTensorTypeAndShapeInfo().GetShape()) << std::endl;
+inline std::vector<std::string> loadLabels(const std::string& filename)
+{
+    std::vector<std::string> output;
 
-    // pass data through model
-    std::vector<const char*> input_names_char(input_names.size(), nullptr);
-    std::transform(std::begin(input_names), std::end(input_names), std::begin(input_names_char),
-                    [&](const std::string& str) { return str.c_str(); });
-
-    std::vector<const char*> output_names_char(output_names.size(), nullptr);
-    std::transform(std::begin(output_names), std::end(output_names), std::begin(output_names_char),
-                    [&](const std::string& str) { return str.c_str(); });
-
-    std::cout << "Running model..." << std::endl;
-    try {
-        auto output_tensors = session.Run(Ort::RunOptions{nullptr}, input_names_char.data(), input_tensors.data(),
-                                        input_names_char.size(), output_names_char.data(), output_names_char.size());
-
-        auto result = std::distance(output_tensors.begin(), std::max_element(output_tensors.begin(), output_tensors.end()));
-        std::cout << "result: "  << result << std::endl;
-        // double-check the dimensions of the output tensors
-        // NOTE: the number of output tensors is equal to the number of output nodes specifed in the Run() call
-        assert(output_tensors.size() == output_names.size() && output_tensors[0].IsTensor());
-    } catch (const Ort::Exception& exception) {
-        std::cout << "ERROR running model inference: " << exception.what() << std::endl;
-        exit(-1);
+    std::ifstream file(filename);
+    if (file) {
+        std::string s;
+        while (getline(file, s)) {
+            output.emplace_back(s);
+        }
+        file.close();
     }
+
+    return output;
+}
+
+// TODO: MOVE LABELS TO ANOTHER .TXT FILE AND LOAD FROM THERE
+// NOTE: this is for debugging and personal use only. pls specify you own labels.
+// FIXME: This may throw out of bound exception if not used very carefully.
+inline std::vector<std::string> modelLabels{"stop","turn left", "turn right", "keep forward"};
+
+void resultToLabel(std::ptrdiff_t *result){
+    std::cout << "predicted -> " << modelLabels[*result] << std::endl;
+}
+
+void testModelHandler(const std::string& path){
+    ModelHandler mHAndler(path);
+    cv::Mat image = cv::imread("/home/seyyit/projects/cpp-autonomous-vehicle/left.png");
+    auto result = mHAndler.prepareInputTensorAndPredict(image);
+    resultToLabel(&result);
+    // TODO: implement this
+    // std::vector<std::pair<size_t, float>> indexValuePairs;
+    // for (size_t i = 0; i < results.size(); ++i) {
+    //     indexValuePairs.emplace_back(i, results[i]);
+    // }
+    // std::sort(indexValuePairs.begin(), indexValuePairs.end(), [](const auto& lhs, const auto& rhs) { return lhs.second > rhs.second; });
+
+    // // show Top5
+    // for (size_t i = 0; i < 4; ++i) {
+    //     const auto& result = indexValuePairs[i];
+    //     std::cout << i + 1 << ": " << labels[result.first] << " " << result.second << std::endl;
+    // }
 }
