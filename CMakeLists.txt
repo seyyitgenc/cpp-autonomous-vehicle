@@ -9,6 +9,7 @@ set(LIBS ${OpenCV_LIBS})
 # onnxruntime
 set(LIBS ${LIBS} ${CMAKE_SOURCE_DIR}/lib/libonnxruntime.so)
 
+
 # source files
 file(GLOB_RECURSE SOURCE
     src/*.cpp

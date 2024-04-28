@@ -3,7 +3,7 @@ import tf2onnx
 import onnx
 
 # Load Keras model
-model = tf.keras.models.load_model('C:\projects_ai\Traffic-Sign-Recognition\model.h5')
+model = tf.keras.models.load_model('/home/seyyit/projects/cpp-autonomous-vehicle/model.h5')
 
 model_name = "sign"
 input_signature = [tf.TensorSpec(model.inputs[0].shape, model.inputs[0].dtype, name='sign')]
