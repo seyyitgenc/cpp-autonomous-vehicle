@@ -128,41 +128,5 @@ int LaneDetector::calc_err(cv::Mat gray_img) {
     return pt_err.x;  
 }
 
-int errconstant = 0;
 void testLaneDetector(const std::string& path){
-    cv::VideoCapture source(path);
-    // cv::VideoCapture source(0);
-    LaneDetector detector(source.get(cv::CAP_PROP_FRAME_WIDTH), source.get(cv::CAP_PROP_FRAME_HEIGHT));
-    cv::Mat frame, cut_gray;
-
-    double fps = source.get(cv::CAP_PROP_FPS);
-    // int delay = 1000 / fps;
-
-    // for motor calculations
-    int error = 0;
-    int vel1 = 0, vel2 = 0;
-    double k = 0.32;
-    int speed = 100;
-
-    while (true)
-    {
-        source >> frame;
-        // errconstant = frame.rows / 2;
-        if (frame.empty())
-            break;
-        cut_gray = detector.preprocess(frame);
-        
-        error = detector.calc_err(cut_gray) - 640;
-        
-        vel1 = speed + (error * k);
-        vel2 = -(speed - (error * k));
-
-        std::cout << "vel1:" << vel1 << ',' << "vel2:" << vel2 << ", error: " << error << std::endl;
-
-        cv::imshow("frame", frame);
-        if (cv::waitKey(30) >= 0)
-            break;
-        
-    }
-    cv::destroyAllWindows();
 }

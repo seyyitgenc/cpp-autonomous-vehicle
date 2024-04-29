@@ -27,7 +27,5 @@ private:
     static constexpr float _height_scale = 4.0f;
 };
 
-// int calc_err(cv::Mat gray_img);
-// cv::Mat preprocess(cv::Mat input);
 void testLaneDetector(const std::string& name);
 #endif

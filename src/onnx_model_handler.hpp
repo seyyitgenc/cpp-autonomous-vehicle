@@ -161,7 +161,7 @@ inline void resultToLabel(std::ptrdiff_t *result){
     std::cout << "predicted -> " << modelLabels[*result] << std::endl;
 }
 
-inline SIGN resultToLType(std::ptrdiff_t *result){
+inline SIGN resultToType(std::ptrdiff_t *result){
     SIGN ret_type = SIGN::NONE; 
     switch (*result)
     {
@@ -191,24 +191,4 @@ inline SIGN resultToLType(std::ptrdiff_t *result){
         break;
     }
     return ret_type;
-}
-
-inline void testModelHandler(const std::string &model_path, const std::string &img_path){
-    ModelHandler mHAndler(model_path);
-    cv::Mat image = cv::imread(img_path);
-    auto result = mHAndler.prepareInputTensorAndPredict(image);
-    resultToLabel(&result);
-
-    // TODO: implement this
-    // std::vector<std::pair<size_t, float>> indexValuePairs;
-    // for (size_t i = 0; i < results.size(); ++i) {
-    //     indexValuePairs.emplace_back(i, results[i]);
-    // }
-    // std::sort(indexValuePairs.begin(), indexValuePairs.end(), [](const auto& lhs, const auto& rhs) { return lhs.second > rhs.second; });
-
-    // // show Top5
-    // for (size_t i = 0; i < 4; ++i) {
-    //     const auto& result = indexValuePairs[i];
-    //     std::cout << i + 1 << ": " << labels[result.first] << " " << result.second << std::endl;
-    // }
 }
