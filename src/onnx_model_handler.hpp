@@ -12,6 +12,17 @@
 
 #include "utils/filesystem.hpp"
 
+enum struct SIGN{
+    STOP = 0,
+    TURN_LEFT = 1,
+    TURN_RIGHT = 2,
+    KEEP_FORWARD = 3,
+    GATE1 = 4,
+    GATE2 = 5,
+    GATE3 = 6,
+    NONE = -1
+};
+
 std::string print_shape(const std::vector<std::int64_t>& v) {
   std::stringstream ss("");
   for (std::size_t i = 0; i < v.size() - 1; i++) ss << v[i] << "x";
@@ -23,7 +34,7 @@ struct ModelInformation
 {
     static constexpr std::int64_t width = 32;
     static constexpr std::int64_t height = 32;
-    static constexpr std::int64_t numClasses = 5;
+    static constexpr std::int64_t numClasses = 8;
 
     Ort::Value inputTensor{nullptr};
     std::array<std::int64_t,4> inputShape{1, width, height, 1};
@@ -77,7 +88,7 @@ public:
         std::sort(indexValuePairs.begin(), indexValuePairs.end(), [](const auto& lhs, const auto& rhs) { return lhs.second > rhs.second; });
 
         // show Top5
-        for (size_t i = 0; i < 4; ++i) {
+        for (size_t i = 0; i < 5; ++i) {
             const auto& result = indexValuePairs[i];
             std::cout << "index "  << result.first << " with prob. " << result.second << std::endl;
             // std::cout << i + 1 << ": " << labels[result.first] << " " << result.second << std::endl;
@@ -144,10 +155,42 @@ inline std::vector<std::string> loadLabels(const std::string& filename)
 
 // NOTE: this is for debugging and personal use only. pls specify you own labels.
 // FIXME: This may throw out of bound exception if not used very carefully.
-inline std::vector<std::string> modelLabels{"stop","turn left", "turn right", "keep forward", "other"};
+inline std::vector<std::string> modelLabels{"stop","turn left", "turn right", "keep forward", "other","1 gate","2 gate","3 gate"};
 
 inline void resultToLabel(std::ptrdiff_t *result){
     std::cout << "predicted -> " << modelLabels[*result] << std::endl;
+}
+
+inline SIGN resultToLType(std::ptrdiff_t *result){
+    SIGN ret_type = SIGN::NONE; 
+    switch (*result)
+    {
+    case 0:
+        ret_type = SIGN::STOP;
+        break;
+    case 1:
+        ret_type = SIGN::TURN_LEFT;
+        break;
+    case 2:
+        ret_type = SIGN::TURN_RIGHT;
+        break;
+    case 3:
+        ret_type = SIGN::KEEP_FORWARD;
+        break;
+    case 4:
+        ret_type = SIGN::NONE;
+        break;
+    case 5:
+        ret_type = SIGN::GATE1;
+        break;
+    case 6:
+        ret_type = SIGN::GATE2;
+        break;
+    case 7:
+        ret_type = SIGN::GATE3;
+        break;
+    }
+    return ret_type;
 }
 
 inline void testModelHandler(const std::string &model_path, const std::string &img_path){

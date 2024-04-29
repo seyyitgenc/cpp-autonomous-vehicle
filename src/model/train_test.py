@@ -41,7 +41,7 @@ for x in range (0,len(myList)):
         classNo.append(count)
     print(count, end =" ")
     count +=1
-images, classNo = shuffle(images, classNo)
+# images, classNo = shuffle(images, classNo)
 images = np.array(images)
 classNo = np.array(classNo)
 from tensorflow.keras.callbacks import EarlyStopping
@@ -71,9 +71,9 @@ def equalize(img):
     img =cv2.equalizeHist(img)
     return img
 def preprocessing(img):
-    img = grayscale(img)     
-    img = equalize(img)      
-    img = img/255            
+    img = grayscale(img)
+    img = equalize(img)
+    img = img/255
     return img
 
 
@@ -116,11 +116,9 @@ def myModel():
     
     model= keras.models.Sequential()
     model.add((keras.layers.Conv2D(60,(5,5),input_shape=(imageDimesions[0],imageDimesions[1],1),activation='relu')))  # ADDING MORE CONVOLUTION LAYERS = LESS FEATURES BUT CAN CAUSE ACCURACY TO INCREASE
-    model.add((keras.layers.Conv2D(60, (5,5), activation='relu')))
     model.add(keras.layers.MaxPooling2D(pool_size=(2,2)))
  
     model.add((keras.layers.Conv2D(30, (3,3),activation='relu')))
-    model.add((keras.layers.Conv2D(30, (3,3), activation='relu')))
     model.add(keras.layers.MaxPooling2D(pool_size=(2,2)))
     model.add(keras.layers.Dropout(0.5))
  

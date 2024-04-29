@@ -6,9 +6,9 @@
 #include "utils/filesystem.hpp"
 
 void frameExtractor(){
-    std::string path = "/home/seyyit/dataset/0/";
+    std::string path = "/home/seyyit/dataset/7/";
     // Open the video file
-    cv::VideoCapture cap(FileSystem::getPath("DataSetVideos/stopSign.mp4"));
+    cv::VideoCapture cap(FileSystem::getPath("DataSetVideos/3.mp4"));
 
     if (!cap.isOpened()) {
         std::cerr << "Error opening video file\n";
@@ -21,8 +21,9 @@ void frameExtractor(){
     while (true) {
         // Read the next frame
         cap >> frame;
-        processed = preprocessSign(frame);
-        auto redness = returnRedness(frame);
+        processed = preprocessBlue(frame);
+        cv::cvtColor(processed, processed, cv::COLOR_BGR2GRAY);
+        cv::imshow("frame test", processed);
         try
         {
             auto contours = findContour(processed);
@@ -33,18 +34,19 @@ void frameExtractor(){
 
             if (cv::contourArea(big) > 3000)
             {
+                // FIXME: don't forget that you refactored this
                 auto sign =  boundaryBox(frame, big);
                 // auto result = model.prepareInputTensorAndPredict(sign);
                 // resultToLabel(&result);
                         // Construct the filename
-                cv::resize(sign, sign, {32,32});
+                // cv::resize(sign, sign, {32,32});
 
                 std::string filename = "frame" + std::to_string(frameNum) + ".jpg";
                 std::string full_path = path + filename;
                 // Save the frame as an image file
-                cv::imwrite(full_path, sign);
+                // cv::imwrite(full_path, sign);
                 frameNum++;
-                cv::imshow("sign",sign);
+                // cv::imshow("sign",sign);
             }
 
         }
@@ -56,6 +58,7 @@ void frameExtractor(){
         if (frame.empty()) {
             break;
         }
+        cv::waitKey(1);
     }
 
     // Release the video file
