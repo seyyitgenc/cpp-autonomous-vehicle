@@ -51,10 +51,10 @@ void MotorDriver::reverse(Motor type, int speed){
         // digitalWrite(AIN2, HIGH);
         // analogWrite(PWMA, speed);
         break;
-    // case Motor::RIGHT:
-    //     digitalWrite(BIN1, LOW);
-    //     digitalWrite(BIN2, HIGH);
-    //     analogWrite(PWMB, speed);
+    case Motor::RIGHT:
+        // digitalWrite(BIN1, LOW);
+        // digitalWrite(BIN2, HIGH);
+        // analogWrite(PWMB, speed);
         break;
     default:
         // Serial.println("undefined motor type");
