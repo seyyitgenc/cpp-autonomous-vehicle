@@ -8,6 +8,7 @@ set(LIBS ${OpenCV_LIBS})
 
 # onnxruntime
 set(LIBS ${LIBS} ${CMAKE_SOURCE_DIR}/lib/libonnxruntime.so)
+set(LIBS ${LIBS} /usr/lib/libwiringPi.so)
 
 
 # source files

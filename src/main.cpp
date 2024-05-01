@@ -6,30 +6,39 @@
 #include "sign_detection.hpp"
 #include "vehicle.hpp"
 #include "utils/frame_extractor.hpp"
+#include "utils/stopwatch.hpp"
 
 // TODO 1: MOTORLARI HARREKET ETTIR
 // TODO 2: MOTORLARI HAREKET ETTIRDIKTEN SONRA VIDEO ILE DONUSLERIINI TEST ET
 // TODO 3: SAGA DONUS TABELASINI TANIT
 // TODO 4: TABELALARA GORE AKSIYON
+// for error 
+inline constexpr double k = 0.32;
 
 inline void stop(){
     // TODO: stop motors here
     
     std::this_thread::sleep_for(std::chrono::seconds(10));
-    std::cout << " i slept boho" << std::endl;
+    std::cout << " i slept 10sec" << std::endl;
 }
 
 bool ignore = false;
 
 int main(){
     std::string model_path = FileSystem::getPath("src/model/sign.onnx");
-    std::string video_path = FileSystem::getPath("videos/test10.mp4");
+    std::string video_path = FileSystem::getPath("videos/test12.mp4");
     ModelHandler model(model_path);
     cv::VideoCapture source(video_path);
-    Vehicle car(model_path);
+    
+    Vehicle car;
+    
     LaneDetector detector(source.get(cv::CAP_PROP_FRAME_WIDTH), source.get(cv::CAP_PROP_FRAME_HEIGHT));
+    
     SignDetector sdetector;
+    
     cv::Mat frame, cut_gray, canny_edges;
+    
+    
     int error = 0;
     int vel1 = 0, vel2 = 0;
     double k = 0.32;
@@ -51,12 +60,6 @@ int main(){
         try
         {
             auto contours = sdetector.findContour(processed);
-            // auto top3 = findTopThreeContour(processed);
-            // std::cout << contours.size() << std::endl;
-            // for (size_t i = 0; i < top3.size(); i++)
-            // {
-            //     auto sign =  boundaryBox(frame, top3);
-            // }
             
             auto big = sdetector.findBiggestContour(contours);
 
@@ -74,24 +77,23 @@ int main(){
                 double distance = (knownWidth * focalLength) / objectWidthPixels;
                 std::cout << "distance in : " << distance << std::endl;
                 if (distance < 30 && !ignore){
-                    auto result = model.prepareInputTensorAndPredict(sign);
-                    SIGN sign_type = resultToType(&result);
-                    if (sign_type == SIGN::STOP)
-                    {
-                        stop();
-                        ignore = true;
-                    }
+                    // auto result = model.prepareInputTensorAndPredict(sign);
+                    // SIGN sign_type = resultToType(&result);
+                    // if (sign_type == SIGN::STOP)
+                    // {
+                    //     // stop();
+                    //     ignore = true;
+                    // }
 
-                    // cut_gray
-                    if (result2 < 2)
-                        ignore = false;
+                    // // cut_gray
+                    // if (result2 < 2)
+                    //     ignore = false;
                     
                     // if (instructions.top() != sign_type || !instructions.empty()){
                     //     instructions.push(sign_type);
                     // }
                 }
             }
-            // vehicle_behaviour()
         }
         catch(const std::exception& e)
         {
@@ -99,21 +101,22 @@ int main(){
         }
         cut_gray = detector.preprocess(frame);
         cv::Canny(cut_gray, canny_edges,100,200);
-        cv::imshow("canny edges", canny_edges);
-        error = detector.calc_err(cut_gray) - 640;
+        // cv::imshow("canny edges", canny_edges);
+        error = detector.calc_err(cut_gray) - 320;
 
         vel1 = speed + (error * k);
-        vel2 = (speed - (error * k));
-
+        vel2 = speed - (error * k);
+        car.auto_drive(vel1, vel2);
         // std::cout << "vel1:" << vel1 << ',' << "vel2:" << vel2 << ", error: " << error << std::endl;
 
-        cv::imshow("frame", frame);
-        if (cv::waitKey(1) >= 0)
-            break;
         result2 += timer2.getElapsedTime<float>();
         total_time += timer1.getElapsedTime<float>();
         // std::cout << timer1.getElapsedTime<float>() << std::endl;
         timer1.reset();
         timer2.reset();
+
+        cv::imshow("frame", frame);
+        if (cv::waitKey(1) >= 0)
+            break;
     }
 }

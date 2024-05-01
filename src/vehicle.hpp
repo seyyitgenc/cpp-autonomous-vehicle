@@ -1,30 +1,29 @@
 #pragma once
 
-#include "onnx_model_handler.hpp"
 #include "motor_driver.hpp"
 #include <memory>
-#include "vision.hpp"
 #include <stack>
-#include "utils/stopwatch.hpp"
 #include <thread>
 
 class Vehicle
 {
 public:
-    Vehicle(const std::string &model_path) : model(model_path){
-
+    Vehicle(int speed = 255) : _speed(speed) {
+        _mDriver.attachMotor(Motor::LEFT);
+        _mDriver.attachMotor(Motor::RIGHT);
     }
+    void setSpeed(int speed){ _speed = speed; }
+    void auto_drive(float vel1, float vel2){
+        _mDriver.forward(Motor::LEFT, _speed + vel1);
+        _mDriver.forward(Motor::RIGHT, _speed - vel2);
+        delay(30);
+    };
     ~Vehicle() = default;
 
 private:
-    ModelHandler model;
+    MotorDriver _mDriver;
+    int _speed;
 };
 
-inline constexpr int speed = 100;
-// for error calculations
-inline constexpr double k = 0.32;
-
-// #include "vision.hpp"
-
-float threshold_time = 1.0f;
-float total_time = 0.0f;
+inline float threshold_time = 1.0f;
+inline float total_time = 0.0f;

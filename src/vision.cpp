@@ -3,7 +3,7 @@
 cv::Mat LaneDetector::preprocess(cv::Mat input){
     cv::Mat hsv, mask, result;
 
-    static cv::Scalar lower_yellow = cv::Scalar(20, 55, 55);
+    static cv::Scalar lower_yellow = cv::Scalar(20, 100, 100);
     static cv::Scalar upper_yellow = cv::Scalar(60, 255, 255);
 
     cv::cvtColor(input, hsv,cv::COLOR_BGR2HSV);
