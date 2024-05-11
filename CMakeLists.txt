@@ -2,9 +2,6 @@ cmake_minimum_required(VERSION 3.10)
 
 project(autonomous_vehicle)
 
-# for libcamera opencv comptability
-add_subdirectory(${CMAKE_SOURCE_DIR}/LCCV)
-
 # OpenCV
 find_package(OpenCV REQUIRED)
 set(LIBS ${OpenCV_LIBS})
@@ -15,9 +12,7 @@ if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
     set(ONNXRUNTIME_FILE_NAME "onnxruntime-linux-aarch64-1.17.3")
 else()
     message(FATAL_ERROR 
-        "This project is only compatible with Raspberry Pi 64bit OS. 
-        For now there is not support for other OS systems. 
-        You can work on it if you wan't to!")
+        "This project is only compatible with Raspberry Pi 64bit OS. For now there is not support for other OS systems. You can work on it if you wan't to!")
 endif()
 
 # onnxruntime
@@ -50,6 +45,9 @@ endif()
 link_directories(
     ${ONNXRUNTIME_DIR}/lib)
 set(LIBS ${LIBS} ${ONNXRUNTIME_LIBS})
+
+# for libcamera opencv comptability
+add_subdirectory(${CMAKE_SOURCE_DIR}/LCCV)
 
 # LCCV
 set(LIBS ${LIBS} liblccv.so)
