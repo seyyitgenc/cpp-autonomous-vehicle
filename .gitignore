@@ -2,5 +2,6 @@
 [Bb]uild/
 .vscode
 videos/
+configuration/config.h
 [Dd]ata[Ss]et[Vv]ideos/
 [Ll]ib/libonnxruntime.*

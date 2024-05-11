@@ -29,7 +29,7 @@ int main(){
     cam.options->video_width = 640;
     cam.options->video_height = 480;
     cam.options->framerate = 60;
-    cam.options->verbose = true;
+    cam.options->verbose = false;
     cam.startVideo();
     LaneDetector detector(640,480);
     
