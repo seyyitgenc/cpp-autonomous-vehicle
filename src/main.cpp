@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include <lccv.hpp>
+
 #include "utils/filesystem.hpp"
 #include "vision.hpp"
 #include "onnx_model_handler.hpp"
@@ -7,13 +9,6 @@
 #include "vehicle.hpp"
 #include "utils/frame_extractor.hpp"
 #include "utils/stopwatch.hpp"
-
-// TODO 1: MOTORLARI HARREKET ETTIR
-// TODO 2: MOTORLARI HAREKET ETTIRDIKTEN SONRA VIDEO ILE DONUSLERIINI TEST ET
-// TODO 3: SAGA DONUS TABELASINI TANIT
-// TODO 4: TABELALARA GORE AKSIYON
-// for error 
-inline constexpr double k = 0.32;
 
 inline void stop(){
     // TODO: stop motors here
@@ -28,16 +23,20 @@ int main(){
     std::string model_path = FileSystem::getPath("src/model/sign.onnx");
     std::string video_path = FileSystem::getPath("videos/test12.mp4");
     ModelHandler model(model_path);
-    cv::VideoCapture source(video_path);
-    
+
     Vehicle car;
     
-    LaneDetector detector(source.get(cv::CAP_PROP_FRAME_WIDTH), source.get(cv::CAP_PROP_FRAME_HEIGHT));
+    lccv::PiCamera cam;
+    cam.options->video_width = 640;
+    cam.options->video_height = 480;
+    cam.options->framerate = 60;
+    cam.options->verbose = true;
+    cam.startVideo();
+    LaneDetector detector(640,480);
     
     SignDetector sdetector;
     
     cv::Mat frame, cut_gray, canny_edges;
-    
     
     int error = 0;
     int vel1 = 0, vel2 = 0;
@@ -52,9 +51,8 @@ int main(){
     double focalLength = 300; // Focal length of the camera (in pixels)
     while (true)
     {
-        source >> frame;
-        if (frame.empty())
-            break;
+        if (!cam.getVideoFrame(frame, 1000))
+            continue;
 
         auto processed =  sdetector.preprocessSign(frame);
         try
@@ -64,8 +62,7 @@ int main(){
             auto big = sdetector.findBiggestContour(contours);
 
             if (big.size() <= 0)
-                continue;
-
+                GOTO SKIP;
             if (cv::contourArea(big) > 3000 && total_time >= threshold_time)
             {
                 total_time = 0.0f;
@@ -106,7 +103,7 @@ int main(){
 
         vel1 = speed + (error * k);
         vel2 = speed - (error * k);
-        car.auto_drive(vel1, vel2);
+        // car.auto_drive(vel1, vel2);
         // std::cout << "vel1:" << vel1 << ',' << "vel2:" << vel2 << ", error: " << error << std::endl;
 
         result2 += timer2.getElapsedTime<float>();
@@ -114,7 +111,7 @@ int main(){
         // std::cout << timer1.getElapsedTime<float>() << std::endl;
         timer1.reset();
         timer2.reset();
-
+    SKIP:
         cv::imshow("frame", frame);
         if (cv::waitKey(1) >= 0)
             break;

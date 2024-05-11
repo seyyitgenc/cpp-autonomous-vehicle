@@ -9,19 +9,19 @@ class Vehicle
 {
 public:
     Vehicle(int speed = 255) : _speed(speed) {
-        _mDriver.attachMotor(Motor::LEFT);
-        _mDriver.attachMotor(Motor::RIGHT);
+        // _mDriver.attachMotor(Motor::LEFT);
+        // _mDriver.attachMotor(Motor::RIGHT);
     }
     void setSpeed(int speed){ _speed = speed; }
-    void auto_drive(float vel1, float vel2){
-        _mDriver.forward(Motor::LEFT, _speed + vel1);
-        _mDriver.forward(Motor::RIGHT, _speed - vel2);
-        delay(30);
-    };
+    // void auto_drive(float vel1, float vel2){
+    //     _mDriver.forward(Motor::LEFT, _speed + vel1);
+    //     _mDriver.forward(Motor::RIGHT, _speed - vel2);
+    //     delay(30);
+    // };
     ~Vehicle() = default;
 
 private:
-    MotorDriver _mDriver;
+    // MotorDriver _mDriver;
     int _speed;
 };
 
