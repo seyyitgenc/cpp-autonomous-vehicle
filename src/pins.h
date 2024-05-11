@@ -1,7 +1,7 @@
 #ifndef _PINS_H_
 #define _PINS_H_
 
-#include <wiringPi.h>
+// #include <wiringPi.h>
 
 constexpr int PWMA = 23;
 constexpr int AIN1 = 2;

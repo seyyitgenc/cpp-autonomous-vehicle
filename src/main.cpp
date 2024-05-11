@@ -1,7 +1,4 @@
 #include <iostream>
-
-#include <lccv.hpp>
-
 #include "utils/filesystem.hpp"
 #include "vision.hpp"
 #include "onnx_model_handler.hpp"
@@ -9,6 +6,8 @@
 #include "vehicle.hpp"
 #include "utils/frame_extractor.hpp"
 #include "utils/stopwatch.hpp"
+
+#include "lccv.hpp"
 
 inline void stop(){
     // TODO: stop motors here
@@ -62,7 +61,7 @@ int main(){
             auto big = sdetector.findBiggestContour(contours);
 
             if (big.size() <= 0)
-                GOTO SKIP;
+                goto SKIP;
             if (cv::contourArea(big) > 3000 && total_time >= threshold_time)
             {
                 total_time = 0.0f;
@@ -113,7 +112,10 @@ int main(){
         timer2.reset();
     SKIP:
         cv::imshow("frame", frame);
-        if (cv::waitKey(1) >= 0)
+        if (cv::waitKey(1) == 27)
             break;
     }
+    cam.stopVideo();
+    cv::destroyAllWindows();
+    return 0;
 }

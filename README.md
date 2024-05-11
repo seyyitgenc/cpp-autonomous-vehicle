@@ -1,17 +1,21 @@
-# AUTONOMOUS CAR WITH CPP FOR ITURO COMPETITION
+# AUTONOMOUS CAR WITH CPP
+
+> This application developed on top of raspberry pi os 64 bit environment on raspberry pi 5 with camera module v3
 
 ## BUILD
 
 Dependencies: [OpenCV](https://github.com/opencv/opencv/tree/4.9.0)
-[ONNXRuntime](https://github.com/microsoft/onnxruntime/releases)
+[ONNXRuntime](https://github.com/microsoft/onnxruntime/releases) [LCCV](https://github.com/kbarni/LCCV)
 
 ## DEBIAN
 
-- Click this to see how to build [OpenCV](https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html)
-
-NOTE: You can specify your generator
+NOTE-1: You can specify your generator.
+NOTE-2: YOU MUST CLONE THIS REPO RECURSIVELY.
 
 ```console
+    sudo apt install build-essential cmake git libcamera-dev libopencv-dev
+    
+    git clone https://github.com/seyyitgenc/cpp-autonomous-vehicle.git --recursive
     mkdir build && cd build
     cmake .. 
     cmake --build .
@@ -28,3 +32,7 @@ NOTE: You can specify your generator
 ### For onnxruntime
 
 - <https://onnxruntime.ai/docs/get-started/with-cpp.html>
+
+### For LCCV
+
+- <https://github.com/kbarni/LCCV>
