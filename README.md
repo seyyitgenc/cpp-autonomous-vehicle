@@ -16,9 +16,8 @@ NOTE-2: YOU MUST CLONE THIS REPO RECURSIVELY.
     sudo apt install build-essential cmake git libcamera-dev libopencv-dev
     
     git clone https://github.com/seyyitgenc/cpp-autonomous-vehicle.git --recursive
-    mkdir build && cd build
-    cmake .. 
-    cmake --build .
+    bash build.sh
+    bash run.sh
 ```
 
 ### For traffic sign recognition
